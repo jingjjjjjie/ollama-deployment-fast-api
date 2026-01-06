@@ -1,0 +1,39 @@
+version: "3.9"
+
+services:
+  ollama:
+    build:
+      context: .
+      dockerfile: Dockerfile.ollama
+    container_name: jj_ollama_gptoss20b
+    image: ollama_jj:latest 
+    user: root
+    restart: unless-stopped
+    ports:
+      - "11434:11434"
+    volumes:
+      - /usr/share/ollama/.ollama:/root/.ollama
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              capabilities: [gpu]
+
+  fastapi:
+    build:
+      context: .
+      dockerfile: Dockerfile.fastapi
+    container_name: jj_fastapi_ollama
+    image: fastapi_ollama_jj:latest
+    restart: unless-stopped
+    ports:
+      - "8010:8010"
+    volumes:
+      - ./main.py:/app/main.py
+    environment:
+      - OLLAMA_BASE_URL=http://ollama:11434
+    command: uvicorn main:app --host 0.0.0.0 --port 8010 --reload
+    depends_on:
+      - ollama
+
