@@ -1,41 +1,33 @@
 #!/bin/bash
 set -e
 
-# Start Ollama in background
-echo "Starting Ollama service..."
+# Colors
+GREEN='\033[0;32m'
+BLUE='\033[0;34m'
+NC='\033[0m' # No Color
+
+# Start Ollama service
+echo -e "${BLUE}Starting Ollama service...${NC}"
 /bin/ollama serve &
 OLLAMA_PID=$!
 
-# Wait for Ollama to be ready
-echo "Waiting for Ollama to start..."
+# Wait for service to be ready
 until curl -s http://localhost:11434/api/tags > /dev/null 2>&1; do
     sleep 2
 done
-echo "Ollama is ready!"
 
-# List of required models
-MODELS=(
-    "gpt-oss:20b"
-)
+# Get model name from environment variable
+MODEL_NAME=${MODEL_NAME:-"gpt-oss:20b"}
 
-# Check and pull models if needed
-for model in "${MODELS[@]}"; do
-    echo "Checking if model $model exists..."
-    if /bin/ollama list | grep -q "$model"; then
-        echo "✓ Model $model already exists"
-    else
-        echo "→ Pulling model $model..."
-        /bin/ollama pull "$model"
-        echo "✓ Model $model downloaded successfully"
-    fi
+# Pull model if not exists
+if ! /bin/ollama list | grep -q "$MODEL_NAME"; then
+    /bin/ollama pull "$MODEL_NAME"
+fi
 
-    # Load model into memory
-    echo "→ Loading model $model into memory..."
-    curl -s http://localhost:11434/api/generate -d "{\"model\":\"$model\",\"keep_alive\":-1}" > /dev/null
-    echo "✓ Model $model loaded"
-done
+# Load model into memory
+curl -s http://localhost:11434/api/generate -d "{\"model\":\"$MODEL_NAME\",\"keep_alive\":-1}" > /dev/null
 
-echo "All models ready and loaded! Ollama is running."
+echo -e "${GREEN}Ollama ready with model: $MODEL_NAME${NC}"
 
-# Keep Ollama running in foreground
+# Keep service running
 wait $OLLAMA_PID

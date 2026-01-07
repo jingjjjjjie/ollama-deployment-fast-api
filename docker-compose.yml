@@ -6,13 +6,15 @@ services:
       context: .
       dockerfile: Dockerfile.ollama
     container_name: jj_ollama_gptoss20b
-    image: ollama_jj:latest 
+    image: ollama_jj:latest
     user: root
     restart: unless-stopped
     ports:
       - "11434:11434"
     volumes:
       - /usr/share/ollama/.ollama:/root/.ollama
+    environment:
+      - MODEL_NAME=gpt-oss:20b  # 通过环境变量指定模型
     deploy:
       resources:
         reservations:
